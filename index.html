@@ -1,0 +1,3475 @@
+import { useState } from "react";
+
+const C = {
+  navy: "#1B3A5C",
+  blue: "#2E7DC8",
+  blueMid: "#4A90C4",
+  blueLight: "#E8F2FB",
+  bluePale: "#F0F6FD",
+  white: "#FFFFFF",
+  gray50: "#F4F6F9",
+  gray100: "#E2E8F0",
+  gray200: "#CBD5E1",
+  gray400: "#8A9BB0",
+  gray600: "#4A5568",
+  text: "#1A2535",
+  muted: "#5A6A80",
+};
+
+const CAT_COLORS = {
+  "Metabolic & Weight Management": {
+    bg: "#E0F4FA",
+    border: "#0B9AC4",
+    text: "#065E7A",
+    dot: "#0B9AC4",
+    pill: "#BDE8F5",
+    tag: "METABOLIC",
+  },
+  "Growth Hormone & Anti-Aging": {
+    bg: "#EEE8F8",
+    border: "#7B5EA8",
+    text: "#4A2E80",
+    dot: "#7B5EA8",
+    pill: "#D8CCEF",
+    tag: "GROWTH HORMONE",
+  },
+  "Healing & Recovery": {
+    bg: "#E4F4EE",
+    border: "#2E8B6A",
+    text: "#1A5C45",
+    dot: "#2E8B6A",
+    pill: "#B8E4D4",
+    tag: "HEALING",
+  },
+  "Skin & Aesthetics": {
+    bg: "#FDE8F2",
+    border: "#C4407A",
+    text: "#7A1848",
+    dot: "#C4407A",
+    pill: "#F5B8D4",
+    tag: "SKIN & AESTHETICS",
+  },
+  "Energy & Cellular Health": {
+    bg: "#FDF3E3",
+    border: "#C47A20",
+    text: "#7A4A0A",
+    dot: "#C47A20",
+    pill: "#F5D9A8",
+    tag: "ENERGY",
+  },
+  "Cognitive & Wellness": {
+    bg: "#FAECEE",
+    border: "#C45A6A",
+    text: "#7A2535",
+    dot: "#C45A6A",
+    pill: "#F0C0C8",
+    tag: "COGNITIVE",
+  },
+  "Sexual Health": {
+    bg: "#F5EAF7",
+    border: "#9B3DB8",
+    text: "#5E1A78",
+    dot: "#9B3DB8",
+    pill: "#E0C0EE",
+    tag: "SEXUAL HEALTH",
+  },
+  Immunity: {
+    bg: "#E8F4E0",
+    border: "#4A8C28",
+    text: "#285A10",
+    dot: "#4A8C28",
+    pill: "#C0DCA8",
+    tag: "IMMUNITY",
+  },
+};
+const CAT_ORDER = Object.keys(CAT_COLORS);
+
+// vol = mL of reconstitution fluid used. Determines total clicks (vol × 100).
+// GLP starters (Sema 1mg, Tirz 10mg, Reta 8mg) = 1mL = 100 clicks
+// All other GLP vials = 2mL = 200 clicks
+// All non-GLP pens = 3mL = 300 clicks
+
+const PenSVG = ({ cap = "#2E7DC8", w = 280 }) => (
+  <svg
+    viewBox="0 0 360 72"
+    width={w}
+    style={{ display: "block", overflow: "visible" }}
+  >
+    <rect
+      x="35"
+      y="14"
+      width="278"
+      height="44"
+      rx="22"
+      fill="#F0F4F8"
+      stroke="#CBD5E1"
+      strokeWidth="0.8"
+    />
+    <rect x="37" y="14" width="274" height="11" rx="22" fill="#FAFBFD" />
+    {[50, 58, 66].map((x) => (
+      <rect
+        key={x}
+        x={x}
+        y="19"
+        width="2.5"
+        height="34"
+        rx="1.5"
+        fill="#CBD5E1"
+      />
+    ))}
+    <rect
+      x="166"
+      y="26"
+      width="14"
+      height="9"
+      rx="2"
+      fill="#A0AEBF"
+      stroke="#8A9BB0"
+      strokeWidth="0.5"
+    />
+    <rect
+      x="166"
+      y="38"
+      width="14"
+      height="9"
+      rx="2"
+      fill="#A0AEBF"
+      stroke="#8A9BB0"
+      strokeWidth="0.5"
+    />
+    <rect x="288" y="14" width="72" height="44" rx="0 22 22 0" fill={cap} />
+    <rect
+      x="333"
+      y="18"
+      width="5"
+      height="36"
+      rx="2"
+      fill="rgba(255,255,255,0.3)"
+    />
+    <rect
+      x="341"
+      y="18"
+      width="5"
+      height="36"
+      rx="2"
+      fill="rgba(255,255,255,0.3)"
+    />
+    <line
+      x1="289"
+      y1="14"
+      x2="289"
+      y2="58"
+      stroke="rgba(0,0,0,0.08)"
+      strokeWidth="1"
+    />
+    <rect
+      x="13"
+      y="23"
+      width="25"
+      height="26"
+      rx="13 0 0 13"
+      fill="#E2E8F0"
+      stroke="#CBD5E1"
+      strokeWidth="0.5"
+    />
+    <polygon points="4,36 13,29 13,43" fill="#CBD5E1" />
+  </svg>
+);
+
+const COMPOUNDS = [
+  {
+    id: "sema",
+    name: "GLP-1 Semaglutide",
+    full: "GLP-1 Receptor Agonist",
+    cat: "Metabolic & Weight Management",
+    cap: "#0B9AC4",
+    variants: [
+      { label: "1mg", total: 1, unit: "mg", vol: 1 },
+      { label: "3.5mg", total: 3.5, unit: "mg", vol: 2 },
+      { label: "5.5mg", total: 5.5, unit: "mg", vol: 2 },
+      { label: "7.5mg", total: 7.5, unit: "mg", vol: 2 },
+      { label: "10mg", total: 10, unit: "mg", vol: 2 },
+    ],
+    summary:
+      "A GLP-1 receptor agonist activating hypothalamic satiety centres. STEP trials demonstrated 15–17% average body weight reduction over 68 weeks.",
+    desc: "Semaglutide is a synthetic analogue of GLP-1 that activates POMC/CART satiety neurons and suppresses appetite-driving AgRP/NPY neuropeptides. The SELECT cardiovascular outcomes trial demonstrated a 20% reduction in major adverse cardiovascular events.",
+    mechanism:
+      "Full GLP-1R agonist → glucose-dependent insulin secretion; suppresses glucagon; activates hypothalamic POMC/CART neurons; delays gastric emptying; reduces hepatic glucose output.",
+    benefits: [
+      "Sustained appetite suppression via direct hypothalamic satiety activation",
+      "15–17% mean body weight reduction (STEP clinical trials)",
+      "Glucose-dependent insulin secretion — minimal hypoglycaemia risk",
+      "20% reduction in major cardiovascular events (SELECT 2023)",
+      "Reduces hepatic steatosis and improves NAFLD",
+      "Reduces LDL, triglycerides, and blood pressure",
+      "Improves insulin sensitivity and reverses pre-diabetic patterns",
+      "Anti-inflammatory — reduces systemic CRP",
+    ],
+    spaBenefits: [
+      "Medical weight management",
+      "Metabolic syndrome and insulin resistance",
+      "Cardiovascular risk reduction",
+      "Body composition transformation",
+    ],
+    side: [
+      "Mild-to-moderate nausea during early titration — self-resolving",
+      "Brief GI adjustment period",
+      "Mild injection site redness — transient",
+    ],
+    dosing:
+      "Starter pen (1mg/1mL): initiate at 0.25mg weekly. Higher-dose pens (2mL): titrate every 4 weeks. Maintenance: 5.5–10mg weekly. Once-weekly subcutaneous injection.",
+    recommendedDays: ["Mon"],
+    freq: "Once weekly",
+  },
+
+  {
+    id: "tirz",
+    name: "GLP-2 Tirzepatide",
+    full: "Dual GLP-1/GIP Receptor Agonist",
+    cat: "Metabolic & Weight Management",
+    cap: "#0E8BAA",
+    variants: [
+      { label: "10mg", total: 10, unit: "mg", vol: 1 },
+      { label: "20mg", total: 20, unit: "mg", vol: 2 },
+      { label: "30mg", total: 30, unit: "mg", vol: 2 },
+      { label: "40mg", total: 40, unit: "mg", vol: 2 },
+      { label: "50mg", total: 50, unit: "mg", vol: 2 },
+      { label: "60mg", total: 60, unit: "mg", vol: 2 },
+    ],
+    summary:
+      "A dual GLP-1/GIP receptor agonist. SURMOUNT-1 trials demonstrated 22.5% average body weight reduction.",
+    desc: "Tirzepatide simultaneously activates both GLP-1 and GIP receptors. GIP receptor activation enhances β-cell glucose sensitivity and promotes visceral fat redistribution. SURMOUNT-1 achieved 22.5% mean body weight reduction.",
+    mechanism:
+      "Balanced dual agonism at GLP-1R and GIPR; promotes visceral fat redistribution; synergistic appetite suppression; superior HbA1c reduction.",
+    benefits: [
+      "22.5% mean body weight reduction (SURMOUNT-1)",
+      "Outperforms semaglutide in head-to-head SURPASS trials",
+      "Superior HbA1c and insulin resistance reduction",
+      "Significant visceral and liver fat redistribution",
+      "Improves β-cell function and pancreatic health",
+      "Reduces cardiovascular risk markers",
+      "Decreases liver enzymes and improves NASH/NAFLD",
+      "Supports durable long-term weight maintenance",
+    ],
+    spaBenefits: [
+      "Advanced medical weight management",
+      "Metabolic disease reversal",
+      "Superior body composition transformation",
+      "Cardiovascular wellness",
+    ],
+    side: [
+      "Mild-to-moderate nausea during titration — decreases with stabilisation",
+      "Brief GI adjustment — self-resolving",
+      "Mild injection site redness",
+    ],
+    dosing:
+      "Starter pen (10mg/1mL): initiate at 2.5mg weekly. Higher-dose pens (2mL): titrate every 4 weeks. Maintenance: 30–60mg weekly. Once-weekly subcutaneous injection.",
+    recommendedDays: ["Mon"],
+    freq: "Once weekly",
+  },
+
+  {
+    id: "reta",
+    name: "GLP-3 Retatrutide",
+    full: "Triple GIP/GLP-1/Glucagon Receptor Agonist",
+    cat: "Metabolic & Weight Management",
+    cap: "#1270A0",
+    variants: [
+      { label: "8mg", total: 8, unit: "mg", vol: 1 },
+      { label: "16mg", total: 16, unit: "mg", vol: 2 },
+      { label: "24mg", total: 24, unit: "mg", vol: 2 },
+      { label: "32mg", total: 32, unit: "mg", vol: 2 },
+      { label: "40mg", total: 40, unit: "mg", vol: 2 },
+      { label: "48mg", total: 48, unit: "mg", vol: 2 },
+    ],
+    summary:
+      "The world's first triple GIP/GLP-1/glucagon receptor agonist. Phase 2 NEJM 2023: 24.2% mean body weight reduction at 48 weeks.",
+    desc: "Retatrutide adds glucagon receptor agonism to the dual GLP/GIP mechanism. Glucagon receptor activation increases hepatic fat mobilisation, drives brown adipose thermogenesis, and enhances visceral fat clearance. Phase 2 NEJM (2023) demonstrated 24.2% body weight reduction.",
+    mechanism:
+      "Triple agonism at GIPR, GLP-1R, and GCR; glucagon receptor drives brown adipose thermogenesis and hepatic β-oxidation; highest energy expenditure of any incretin agent.",
+    benefits: [
+      "24.2% mean body weight reduction at 48 weeks (Phase 2 NEJM 2023)",
+      "Triple GIP+GLP-1+Glucagon mechanism — most potent metabolic peptide",
+      "Most aggressive visceral and hepatic fat clearance",
+      "Increases thermogenesis and basal metabolic rate",
+      "Superior HbA1c and insulin resistance improvement",
+      "Reduces hepatic steatosis most effectively",
+      "Improves dyslipidaemia",
+      "Currently in Phase 3 trials",
+    ],
+    spaBenefits: [
+      "Clinical-frontier weight management",
+      "Maximum-potency metabolic transformation",
+      "Aggressive visceral fat programs",
+      "Metabolic disease reversal",
+    ],
+    side: [
+      "Mild nausea during titration — self-resolving",
+      "GI adjustment normalises with dose stabilisation",
+      "Mild injection site redness",
+    ],
+    dosing:
+      "Starter pen (8mg/1mL): initiate at 2mg weekly. Higher-dose pens (2mL): titrate every 4 weeks. Once-weekly subcutaneous injection.",
+    recommendedDays: ["Mon"],
+    freq: "Once weekly",
+  },
+
+  {
+    id: "tesam",
+    name: "Tesamorelin",
+    full: "Stabilised GHRH Analogue",
+    cat: "Growth Hormone & Anti-Aging",
+    cap: "#7B5EA8",
+    variants: [
+      { label: "10mg", total: 10, unit: "mg", vol: 3 },
+      { label: "30mg", total: 30, unit: "mg", vol: 3 },
+    ],
+    summary:
+      "An FDA-approved stabilised GHRH analogue stimulating pituitary GH in a natural pulsatile pattern. Clinically validated for visceral fat reduction and IGF-1 elevation.",
+    desc: "Tesamorelin acts at the pituitary GHRH receptor to stimulate GH secretion physiologically — preserving the hypothalamic-pituitary feedback loop. FDA-approved for HIV-associated lipodystrophy.",
+    mechanism:
+      "Full GHRH-R agonist → pulsatile GH secretion → hepatic IGF-1; GH drives lipolysis especially visceral; IGF-1 activates PI3K/Akt/mTOR; somatostatin feedback preserved.",
+    benefits: [
+      "Stimulates physiological pulsatile GH — no axis suppression",
+      "Clinically documented visceral adipose reduction",
+      "Elevates IGF-1 for anabolic, skin, bone, and cognitive benefits",
+      "Improves lean body mass and muscle quality",
+      "Supports cognitive function via IGF-1 neuroreceptor activity",
+      "Enhances connective tissue and dermal collagen density",
+      "Improves lipid profile",
+      "Better tolerated than exogenous HGH",
+    ],
+    spaBenefits: [
+      "Anti-aging GH axis restoration",
+      "Visceral fat and body composition",
+      "Cognitive performance enhancement",
+      "Skin quality and collagen support",
+    ],
+    side: [
+      "Mild injection site redness — self-resolving",
+      "Occasional mild joint discomfort early — transient",
+      "No axis suppression at standard doses",
+    ],
+    dosing:
+      "Standard: 1–2mg daily subcutaneous injection, 5 days on / 2 days off. Nightly preferred.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+
+  {
+    id: "serm",
+    name: "Sermorelin",
+    full: "Synthetic GHRH Fragment (1-29)",
+    cat: "Growth Hormone & Anti-Aging",
+    cap: "#6A50A0",
+    variants: [{ label: "10mg", total: 10, unit: "mg", vol: 3 }],
+    summary:
+      "The first FDA-approved GHRH peptide. Stimulates natural pituitary GH release while preserving the hypothalamic-pituitary feedback axis.",
+    desc: "Sermorelin is the bioactive N-terminal 29-amino-acid fragment of endogenous GHRH. By acting at the pituitary it cannot produce supraphysiological GH levels — somatostatin feedback acts as a natural ceiling.",
+    mechanism:
+      "Binds GHRH-R on pituitary somatotrophs → GH secretion; somatostatin feedback preserved; GH → IGF-1; improves GH pulsatility.",
+    benefits: [
+      "Stimulates natural GH without suppressing the HPA axis",
+      "Significantly improves sleep quality via nocturnal GH pulse",
+      "Reduces visceral and subcutaneous body fat",
+      "Increases lean muscle mass and physical endurance",
+      "Improves skin thickness and collagen content",
+      "Enhances energy, cognitive sharpness, and motivation",
+      "Supports bone mineral density via IGF-1",
+      "Supports libido and sexual function",
+    ],
+    spaBenefits: [
+      "Anti-aging GH restoration",
+      "Sleep quality and recovery",
+      "Body composition and lean muscle",
+      "Skin and collagen enhancement",
+    ],
+    side: [
+      "Mild injection site redness — transient",
+      "Occasional brief headache in first 1–2 weeks",
+      "Mild water retention early — self-resolving",
+    ],
+    dosing:
+      "Common: 100–300mcg subcutaneously nightly, 5 days on / 2 days off.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+
+  {
+    id: "cjc",
+    name: "CJC-1295 / Ipamorelin",
+    full: "Modified GRF(1-29) + Selective GHRP",
+    cat: "Growth Hormone & Anti-Aging",
+    cap: "#5A42A0",
+    variants: [{ label: "10/10mg", total: 20, unit: "mg", vol: 3 }],
+    summary:
+      "The gold-standard GH combination. Synergistic GH pulses 2–10× greater than either alone, without raising cortisol or prolactin.",
+    desc: "CJC-1295 drives GH secretion while Ipamorelin activates GHS-R1a to stimulate GH release and suppress somatostatin. Their combined action produces synergistic GH pulses without meaningfully raising cortisol, ACTH, or prolactin.",
+    mechanism:
+      "CJC-1295 activates GHRH-R; Ipamorelin activates GHS-R1a → GH release + somatostatin suppression; dual complementary mechanism.",
+    benefits: [
+      "Synergistic GH pulse 2–10× greater than either alone",
+      "No cortisol, ACTH, or prolactin elevation",
+      "Restores youthful pulsatile GH secretion",
+      "Significantly reduces body fat especially visceral",
+      "Dramatically improves Stage 3 NREM sleep depth",
+      "Accelerates exercise and injury recovery",
+      "Improves skin quality, hair, and connective tissue",
+      "Enhances mood, libido, and cognitive performance",
+    ],
+    spaBenefits: [
+      "Premier anti-aging GH restoration",
+      "Body recomposition and fat loss",
+      "Sleep quality and recovery",
+      "Skin and tissue quality",
+    ],
+    side: [
+      "Mild injection site redness — transient",
+      "Occasional brief tingling or mild flushing",
+      "Rare mild water retention first 2–4 weeks",
+    ],
+    dosing:
+      "Common: 100/100mcg subcutaneously 2–3× daily, 5 days on / 2 days off.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+
+  {
+    id: "mots",
+    name: "MOTS-C",
+    full: "Mitochondrial Open Reading Frame of the 12S rRNA Type-C",
+    cat: "Energy & Cellular Health",
+    cap: "#C47A20",
+    variants: [
+      { label: "10mg", total: 10, unit: "mg", vol: 3 },
+      { label: "20mg", total: 20, unit: "mg", vol: 3 },
+    ],
+    summary:
+      "A revolutionary mitochondrial-derived peptide. Activates AMPK, dramatically improves insulin sensitivity, and mimics exercise at the cellular level.",
+    desc: "MOTS-C is encoded by the mitochondrial genome rather than the nuclear genome. It functions as a mitochondrial hormone, activating AMPK, regulating the folate cycle, and improving insulin receptor signalling.",
+    mechanism:
+      "Translocates to nucleus; activates AMPK → inhibits mTORC1; regulates AICAR in folate cycle; improves IRS-1 phosphorylation; anti-inflammatory via NF-κB inhibition.",
+    benefits: [
+      "Activates AMPK — master metabolic regulator for fat oxidation and longevity",
+      "Dramatically improves insulin sensitivity",
+      "Mimics and amplifies cellular benefits of aerobic exercise",
+      "Reduces visceral adipose tissue",
+      "Powerful anti-inflammatory — inhibits NF-κB",
+      "Protects against age-related metabolic decline",
+      "Cellular resilience to oxidative stress",
+      "Associated with lifespan extension in preclinical models",
+    ],
+    spaBenefits: [
+      "Metabolic health and insulin resistance",
+      "Body composition and visceral fat",
+      "Longevity and anti-aging cellular programs",
+      "Energy and metabolic optimisation",
+    ],
+    side: [
+      "Very well tolerated",
+      "Mild injection site redness — transient",
+      "Occasional brief fatigue on first use",
+    ],
+    dosing:
+      "Common: 5–10mg subcutaneously 3–5× weekly. Morning dosing aligns with circadian AMPK activation.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "3–5× weekly",
+  },
+
+  {
+    id: "bpc",
+    name: "BPC-157",
+    full: "Body Protective Compound-157",
+    cat: "Healing & Recovery",
+    cap: "#2E8B6A",
+    variants: [
+      { label: "10mg", total: 10, unit: "mg", vol: 3 },
+      { label: "20mg", total: 20, unit: "mg", vol: 3 },
+    ],
+    summary:
+      "A synthetic pentadecapeptide with extraordinary regenerative activity across musculoskeletal, gastrointestinal, vascular, and neurological tissue.",
+    desc: "BPC-157 is a stable 15-amino-acid peptide derived from human gastric protein. It upregulates growth factor receptors, promotes angiogenesis, accelerates collagen deposition, and modulates the nitric oxide system.",
+    mechanism:
+      "Upregulates VEGFR2 and EGF receptors; activates FAK-paxillin for fibroblast migration; modulates eNOS and iNOS; induces tendon-to-bone fibroblast activation.",
+    benefits: [
+      "Accelerates healing of tendons, ligaments, and muscle tears",
+      "Repairs intestinal epithelium — effective for gut permeability",
+      "Promotes angiogenesis to injured tissue",
+      "Reduces local and systemic inflammation",
+      "Protects and regenerates cartilage",
+      "Neuroprotective — supports nerve repair",
+      "Accelerates post-surgical healing",
+      "Protects gastric lining from NSAID damage",
+    ],
+    spaBenefits: [
+      "Post-procedure recovery acceleration",
+      "Joint and tissue injury recovery",
+      "Gut and digestive wellness",
+      "Post-surgical healing and scar minimisation",
+    ],
+    side: [
+      "Mild injection site discomfort — self-resolving",
+      "Occasional mild dizziness first administration",
+      "Excellent safety profile",
+    ],
+    dosing:
+      "Common: 250mcg daily (acute, 4–6 weeks), then 250mcg 3× weekly maintenance.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "Daily (acute) · 3× weekly (maintenance)",
+  },
+
+  {
+    id: "tb500",
+    name: "TB-500",
+    full: "Thymosin Beta-4 Synthetic Peptide Fragment",
+    cat: "Healing & Recovery",
+    cap: "#257A5A",
+    variants: [{ label: "10mg", total: 10, unit: "mg", vol: 3 }],
+    summary:
+      "A synthetic fragment of Thymosin Beta-4 regulating actin polymerisation. Enables rapid migration of repair cells and reduces fibrosis.",
+    desc: "TB-500 drives actin-mediated cell migration allowing repair cells to rapidly migrate into damaged tissue. It demonstrates potent anti-fibrotic properties.",
+    mechanism:
+      "Sequesters G-actin via WH2 domain; upregulates MMP-2; promotes VEGF-A angiogenesis; inhibits TGF-β1 fibrosis; activates Akt and eNOS.",
+    benefits: [
+      "Accelerates healing of muscle tears and tendon injuries",
+      "Enables rapid migration of repair cells",
+      "Reduces fibrosis — promotes native tissue restoration",
+      "Anti-inflammatory across local and systemic pathways",
+      "Promotes angiogenesis — restores vascular supply",
+      "Reduces adhesions and improves joint mobility",
+      "Synergistic with BPC-157 for dual-mechanism repair",
+      "Studied for cardiac tissue protection",
+    ],
+    spaBenefits: [
+      "Injury recovery and sports medicine",
+      "Post-procedure healing and scar reduction",
+      "Anti-fibrotic skin and tissue treatments",
+      "Joint and connective tissue health",
+    ],
+    side: [
+      "Very well tolerated",
+      "Mild injection site redness — transient",
+      "Occasional brief lightheadedness — self-resolving",
+    ],
+    dosing:
+      "Common: 2–2.5mg subcutaneously 2× weekly for 4–6 weeks (loading), then 1–2mg weekly maintenance.",
+    recommendedDays: ["Mon", "Thu"],
+    freq: "2× weekly (loading) · weekly (maintenance)",
+  },
+
+  {
+    id: "wolverine",
+    name: "Wolverine (BPC-157 / TB-500)",
+    full: "Dual Healing Peptide Combination",
+    cat: "Healing & Recovery",
+    cap: "#1E7A58",
+    variants: [{ label: "10/10mg", total: 20, unit: "mg", vol: 3 }],
+    summary:
+      "The premier dual-healing combination — BPC-157 and TB-500 together addressing every phase of tissue repair simultaneously.",
+    desc: "Wolverine pairs BPC-157 (growth factor receptor upregulation, angiogenesis) with TB-500 (actin-mediated cell migration, fibrosis prevention) to address every phase of tissue repair simultaneously.",
+    mechanism:
+      "BPC-157: VEGFR2/EGF upregulation, FAK-paxillin, NO modulation + TB-500: Tβ4 actin sequestration, MMP-2 ECM remodelling, Akt/eNOS activation.",
+    benefits: [
+      "Comprehensive dual-mechanism healing — every phase simultaneously",
+      "Faster healing than either component alone",
+      "Reduces scar formation while restoring native tissue",
+      "Anti-inflammatory across multiple pathways",
+      "Dual-mechanism vascular restoration",
+      "Supports nerve repair and remyelination",
+      "Protects and restores gut lining",
+      "Broadest tissue application of any single pen",
+    ],
+    spaBenefits: [
+      "Premier injury and tissue recovery",
+      "Post-surgical healing and scar reduction",
+      "Active lifestyle and sports medicine",
+      "Chronic injury and tissue degeneration",
+    ],
+    side: [
+      "Excellent tolerability — both components well-established",
+      "Mild injection site redness — transient",
+      "All side effects mild and self-resolving",
+    ],
+    dosing:
+      "Common: 0.5mg total subcutaneously daily (acute) or 3× weekly maintenance.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "Daily (acute) · 3× weekly (maintenance)",
+  },
+
+  {
+    id: "glow",
+    name: "GLOW (BPC-157 / TB-500 / GHK-Cu)",
+    full: "Aesthetic Regeneration Triple Formula",
+    cat: "Skin & Aesthetics",
+    cap: "#C4407A",
+    variants: [{ label: "10/10/50mg", total: 70, unit: "mg", vol: 3 }],
+    summary:
+      "A curated triple-peptide formula combining BPC-157, TB-500, and GHK-Cu — one of the most studied regenerative molecules in dermatology.",
+    desc: "GLOW combines BPC-157 and TB-500 with GHK-Cu (copper tripeptide) which activates over 4,000 genes involved in skin renewal. GHK-Cu stimulates collagen I and III synthesis, promotes elastin, and activates SOD antioxidant enzymes.",
+    mechanism:
+      "BPC-157: VEGFR2/EGF, angiogenesis; TB-500: actin migration, anti-fibrotic; GHK-Cu: COL1A1/COL3A1 expression, SOD1/SOD2 upregulation, 4,000+ gene reset.",
+    benefits: [
+      "Triple-formula targeting skin regeneration via three mechanisms",
+      "GHK-Cu activates 4,000+ genes to reset skin to younger expression",
+      "Stimulates collagen I and III synthesis",
+      "Promotes elastin production — reduces laxity",
+      "Accelerates post-aesthetic-procedure healing",
+      "Reduces fine lines and skin laxity",
+      "Anti-fibrotic — prevents uneven scar formation",
+      "SOD upregulation for antioxidant skin protection",
+    ],
+    spaBenefits: [
+      "Flagship skin anti-aging and regeneration",
+      "Post-procedure recovery and healing acceleration",
+      "Collagen and elastin restoration",
+      "Comprehensive aesthetic rejuvenation",
+    ],
+    side: [
+      "Excellent tolerability",
+      "Mild injection site redness — transient",
+      "GHK-Cu may produce brief colour at injection site — harmless",
+    ],
+    dosing:
+      "Common: 3× weekly up to daily based on preference. 4–12 week programs.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "3× weekly up to daily — preference based",
+  },
+
+  {
+    id: "klow",
+    name: "KLOW (KPV / BPC-157 / TB-500 / GHK-Cu)",
+    full: "Comprehensive Anti-Inflammatory + Regeneration Formula",
+    cat: "Skin & Aesthetics",
+    cap: "#A83068",
+    variants: [{ label: "10/10/10/50mg", total: 80, unit: "mg", vol: 3 }],
+    summary:
+      "The most comprehensive healing formula — GLOW enhanced with KPV, a potent anti-inflammatory α-MSH fragment. Four complementary mechanisms in one pen.",
+    desc: "KLOW adds KPV to the GLOW formula. KPV acts on melanocortin MC1R receptors to potently inhibit NF-κB — reducing TNF-α, IL-6, IL-8, and IL-1β.",
+    mechanism:
+      "KPV: MC1R → NF-κB inhibition → cytokine suppression; direct intestinal epithelial entry; + BPC-157 repair; + TB-500 migration/anti-fibrotic; + GHK-Cu collagen/SOD.",
+    benefits: [
+      "Most comprehensive formula — four complementary mechanisms",
+      "KPV potently inhibits NF-κB — reduces TNF-α, IL-6, IL-8",
+      "Highly effective for gut inflammation",
+      "Addresses skin inflammation and post-procedure recovery",
+      "Unmatched tissue repair efficacy",
+      "GHK-Cu adds collagen, elastin, and antioxidant benefits",
+      "Systemic anti-inflammatory effects",
+      "Ideal for chronic inflammation alongside healing needs",
+    ],
+    spaBenefits: [
+      "Inflammatory conditions and immune programs",
+      "Gut and skin inflammatory wellness",
+      "Post-procedure comprehensive recovery",
+      "Systemic inflammation support",
+    ],
+    side: [
+      "Excellent tolerability — all four components well-established",
+      "Mild injection site redness — transient",
+      "No immune suppressive effects",
+    ],
+    dosing: "Common: 3× weekly up to daily based on preference.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "3× weekly up to daily — preference based",
+  },
+
+  {
+    id: "kpv",
+    name: "KPV",
+    full: "Lysine-Proline-Valine (α-MSH Fragment)",
+    cat: "Skin & Aesthetics",
+    cap: "#D45888",
+    variants: [{ label: "10mg", total: 10, unit: "mg", vol: 3 }],
+    summary:
+      "A tripeptide derived from alpha-MSH — one of the body's most potent endogenous anti-inflammatory signals.",
+    desc: "KPV is the C-terminal tripeptide of alpha-MSH, retaining its anti-inflammatory properties with superior stability. Its unique ability to enter intestinal epithelial cells directly makes it effective for gut inflammatory conditions.",
+    mechanism:
+      "Activates MC1R and MC3R → inhibits NF-κB → reduces TNF-α, IL-6, IL-8, IL-1β; directly enters intestinal epithelial cells; anti-fibrotic via TGF-β modulation.",
+    benefits: [
+      "Potent anti-inflammatory — inhibits NF-κB across cell types",
+      "Directly enters intestinal epithelial cells",
+      "Reduces IBD-type symptoms and supports mucosal healing",
+      "Anti-inflammatory for skin conditions",
+      "Modulates immune response without suppression",
+      "Supports wound healing via inflammation resolution",
+      "Reduces systemic inflammatory burden",
+      "Synergistic with BPC-157 for gut healing",
+    ],
+    spaBenefits: [
+      "Gut health and inflammatory bowel programs",
+      "Inflammatory skin and post-procedure anti-inflammatory",
+      "Immune modulation and balance",
+      "Systemic inflammation reduction",
+    ],
+    side: [
+      "Exceptionally well tolerated",
+      "Mild injection site redness — transient",
+      "No clinically significant adverse effects",
+    ],
+    dosing:
+      "Common: 3× weekly up to daily based on preference and inflammatory burden.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "3× weekly up to daily — preference based",
+  },
+
+  {
+    id: "ghk",
+    name: "GHK-Cu",
+    full: "Copper Tripeptide (Glycine-Histidine-Lysine)",
+    cat: "Skin & Aesthetics",
+    cap: "#B83070",
+    variants: [{ label: "50mg", total: 50, unit: "mg", vol: 3 }],
+    summary:
+      "The most studied regenerative peptide in dermatology. Activates over 4,000 genes to reset skin toward a younger phenotype.",
+    desc: "GHK-Cu is a naturally occurring tripeptide found in human plasma — with levels declining from 200 ng/mL at age 20 to 80 ng/mL by age 60. It functions as a biological reset signal activating over 4,000 genes.",
+    mechanism:
+      "Stimulates COL1A1 and COL3A1; activates MMP-2 while inhibiting MMP-1/3/8; upregulates SOD1/SOD2; promotes VEGF-A; chromatin remodelling → 4,000+ gene reset.",
+    benefits: [
+      "Stimulates collagen I and III for improved skin firmness",
+      "Promotes elastin and glycosaminoglycan production",
+      "Activates 4,000+ genes to reset skin toward younger expression",
+      "Accelerates wound healing and minimises scarring",
+      "Upregulates SOD1/SOD2 for antioxidant protection",
+      "Anti-inflammatory — reduces redness and irritation",
+      "Supports hair follicle regeneration and density",
+      "Improves skin density, hydration, and dermal architecture",
+    ],
+    spaBenefits: [
+      "Flagship anti-aging and skin rejuvenation",
+      "Post-procedure healing acceleration",
+      "Collagen and elastin restoration",
+      "Hair health and density",
+    ],
+    side: [
+      "Very well tolerated",
+      "Mild injection site redness — transient",
+      "Copper pigmentation may briefly appear — harmless",
+    ],
+    dosing:
+      "Common: 3× weekly up to daily based on preference. 8–16 week programs.",
+    recommendedDays: ["Mon", "Wed", "Fri"],
+    freq: "3× weekly up to daily — preference based",
+  },
+
+  {
+    id: "nad",
+    name: "NAD+",
+    full: "Nicotinamide Adenine Dinucleotide",
+    cat: "Energy & Cellular Health",
+    cap: "#C9A55A",
+    variants: [{ label: "1000mg", total: 1000, unit: "mg", vol: 3 }],
+    summary:
+      "The master coenzyme of cellular energy metabolism. NAD+ levels decline 40–50% between ages 40–60 — linked to fatigue, cognitive decline, and accelerated aging.",
+    desc: "NAD+ is the essential currency of cellular energy metabolism, the fuel for sirtuin longevity proteins, and the substrate for PARP-1-mediated DNA repair.",
+    mechanism:
+      "Electron carrier in glycolysis and Krebs cycle; activates SIRT1/SIRT3 sirtuins; fuels PARP-1 for DNA repair; modulates CD38; precursor to serotonin/dopamine synthesis.",
+    benefits: [
+      "Restores mitochondrial membrane potential and ATP output",
+      "Activates SIRT1 and SIRT3 sirtuins — longevity regulators",
+      "Supports PARP-1 mediated DNA repair",
+      "Enhances mental clarity and working memory",
+      "Improves insulin sensitivity and glucose metabolism",
+      "Elevates mood via serotonin and dopamine precursor pathways",
+      "Reduces neuroinflammation and provides neuroprotection",
+      "Accelerates post-exercise and post-illness recovery",
+    ],
+    spaBenefits: [
+      "Anti-aging cellular regeneration and longevity",
+      "Deep energy restoration",
+      "Mental clarity and brain fog relief",
+      "Metabolic optimisation",
+    ],
+    side: [
+      "Mild transient warmth or flushing — resolves within minutes",
+      "Brief fatigue on first 1–2 administrations",
+      "Occasional mild headache in first week",
+    ],
+    dosing:
+      "Common: 100–250mg every 3 days, titrating from 100mg. Maintenance: 100–150mg every 3 days.",
+    recommendedDays: ["Mon", "Thu", "Sun"],
+    freq: "Every 3 days",
+  },
+
+  {
+    id: "b3",
+    name: "B3 Niacinamide",
+    full: "Nicotinamide (Vitamin B3 Amide)",
+    cat: "Energy & Cellular Health",
+    cap: "#B87020",
+    variants: [{ label: "1000mg", total: 1000, unit: "mg", vol: 3 }],
+    summary:
+      "The direct NAD+ precursor via the NAMPT salvage pathway. Injectable niacinamide replenishes cellular NAD+ pools and activates SIRT1.",
+    desc: "Niacinamide is the most direct and efficient precursor to NAD+ via the NAMPT salvage pathway. Injectable niacinamide achieves plasma concentrations far exceeding oral supplementation.",
+    mechanism:
+      "Converted to NMN → NAD+ via NAMPT; inhibits PARP; reduces TNF-α and IL-6 via NF-κB inhibition; activates SIRT1; protects keratinocytes from UV-induced damage.",
+    benefits: [
+      "Primary NAD+ precursor via NAMPT salvage pathway",
+      "Activates SIRT1 longevity pathway",
+      "Potent anti-inflammatory — inhibits NF-κB",
+      "Protects skin from UV-induced DNA damage and photoaging",
+      "Supports DNA repair and genomic stability",
+      "Improves insulin sensitivity and metabolic flexibility",
+      "Neuroprotective — reduces neuroinflammation",
+      "Synergistic with NAD+ on alternating days",
+    ],
+    spaBenefits: [
+      "Anti-aging and cellular longevity",
+      "Skin health and photoaging prevention",
+      "Metabolic and energy optimisation",
+      "NAD+ pathway support on alternating days",
+    ],
+    side: [
+      "Exceptionally well tolerated",
+      "Mild injection site redness — transient",
+      "No significant adverse effects",
+    ],
+    dosing:
+      "Common: 250–500mg 2–3× weekly. Alternating with NAD+ injections on off-days.",
+    recommendedDays: ["Tue", "Thu", "Sat"],
+    freq: "2–3× weekly",
+  },
+
+  {
+    id: "pt141",
+    name: "PT-141",
+    full: "Bremelanotide (Melanocortin Agonist)",
+    cat: "Sexual Health",
+    cap: "#9B3DB8",
+    variants: [{ label: "10mg", total: 10, unit: "mg", vol: 3 }],
+    summary:
+      "The only peptide working directly on CNS arousal circuits. FDA-approved as Vyleesi for HSDD. Activates hypothalamic dopamine and oxytocin pathways.",
+    desc: "PT-141 activates MC4R and MC3R receptors in the hypothalamic medial preoptic area, triggering dopaminergic reward pathways and oxytocin release — FDA-approved in 2019 as Vyleesi for HSDD.",
+    mechanism:
+      "MC4R and MC3R agonist in hypothalamic nuclei → dopaminergic mesolimbic reward circuits; induces hypothalamic oxytocin release; independent of PDE5/cGMP pathway.",
+    benefits: [
+      "Directly activates CNS arousal centres in both men and women",
+      "FDA-approved mechanism — clinically validated for female HSDD",
+      "Effective for both psychological and physiological dysfunction",
+      "Works independently of sexual stimulation",
+      "Increases spontaneous arousal and sexual receptivity",
+      "Enhances emotional connection via oxytocin activation",
+      "Effective in patients who do not respond to PDE5 inhibitors",
+      "Rapid onset — effects within 30–60 minutes",
+    ],
+    spaBenefits: [
+      "Sexual wellness and intimacy programs",
+      "Libido enhancement and desire restoration",
+      "HSDD treatment",
+      "Hormone and intimate wellness",
+    ],
+    side: [
+      "Mild-to-moderate nausea — 30–90 min post-injection, self-resolving",
+      "Mild facial flushing — brief",
+      "Occasional headache — transient",
+    ],
+    dosing:
+      "Common: 1–1.75mg subcutaneously 30–45 minutes before activity. As-needed — not for daily use.",
+    recommendedDays: ["Fri"],
+    freq: "As-needed",
+  },
+
+  {
+    id: "dsip",
+    name: "DSIP",
+    full: "Delta Sleep-Inducing Peptide",
+    cat: "Cognitive & Wellness",
+    cap: "#A8486A",
+    variants: [{ label: "5mg", total: 5, unit: "mg", vol: 3 }],
+    summary:
+      "A naturally occurring neuropeptide promoting delta-wave sleep without sedation or dependence, normalising disrupted circadian sleep-wake cycles.",
+    desc: "DSIP is a nonapeptide originally isolated from rabbit cerebral venous blood during slow-wave sleep. Unlike pharmaceutical sleep aids, DSIP does not produce sedation, cognitive blunting, or dependence risk.",
+    mechanism:
+      "Modulates thalamic neuron firing for delta-wave sleep; inhibits ACTH release reducing cortisol-driven hyperarousal; modulates LH and GH pulsatile secretion; normalises HPA axis.",
+    benefits: [
+      "Promotes deep delta-wave Stage 3 NREM sleep without sedation",
+      "Normalises disrupted sleep patterns",
+      "Reduces ACTH and cortisol-driven hyperarousal",
+      "Non-addictive — no dependence or withdrawal risk",
+      "Modulates GH secretion — synergistic with GH peptides",
+      "May reduce chronic stress symptoms",
+      "Supports hormonal balance",
+      "Effective for jetlag and circadian dysregulation",
+    ],
+    spaBenefits: [
+      "Sleep restoration and circadian programs",
+      "Stress and cortisol management",
+      "Recovery and hormonal balance",
+      "Travel and shift-work sleep support",
+    ],
+    side: [
+      "Very well tolerated",
+      "Mild injection site redness — transient",
+      "Rare brief dizziness — self-resolving",
+      "No sedative hangover",
+    ],
+    dosing:
+      "Common: 100–300mcg subcutaneously 30 min before sleep. 5 days on / 2 days off.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+
+  {
+    id: "ta1",
+    name: "TA-1",
+    full: "Thymosin Alpha-1 (Tα1)",
+    cat: "Immunity",
+    cap: "#4A8C28",
+    variants: [{ label: "10mg", total: 10, unit: "mg", vol: 3 }],
+    summary:
+      "A thymic peptide and master immune modulator with regulatory approvals in over 35 countries. Normalises rather than simply stimulates immune function.",
+    desc: "Thymosin Alpha-1 (Tα1) is a 28-amino-acid peptide naturally secreted by the thymus gland — the most clinically studied thymic peptide with approvals in over 35 countries.",
+    mechanism:
+      "Binds TLR2/TLR9 on dendritic cells → Type I interferon; promotes Th1 polarisation; activates NK and CD8+ T-cells; upregulates MHC II; modulates FOXP3+ Treg cells.",
+    benefits: [
+      "Activates natural killer cells and CD8+ T-lymphocytes",
+      "Stimulates dendritic cell maturation",
+      "Induces Type I interferon — antiviral and anti-tumour signalling",
+      "Normalises Th1/Th2 immune balance",
+      "Approved in 35+ countries for viral infections and immune deficiency",
+      "Reduces severity and duration of viral infections",
+      "Supports oncological immune surveillance",
+      "Reverses immunosenescence",
+    ],
+    spaBenefits: [
+      "Immune optimisation and resilience",
+      "Chronic illness recovery and post-viral restoration",
+      "Longevity and anti-aging immune programs",
+      "Cancer recovery immune support (under clinical guidance)",
+    ],
+    side: [
+      "Exceptionally well tolerated — decades of safety data",
+      "Mild injection site redness — transient",
+      "No immune-suppressive effects",
+    ],
+    dosing:
+      "Common: 1.6mg subcutaneously 2× weekly maintenance. 1.6mg daily for acute immune support.",
+    recommendedDays: ["Mon", "Thu"],
+    freq: "2× weekly (maintenance) · Daily (acute)",
+  },
+
+  {
+    id: "selank",
+    name: "Selank",
+    full: "Synthetic Anxiolytic Heptapeptide (Tuftsin Analogue)",
+    cat: "Cognitive & Wellness",
+    cap: "#C45870",
+    variants: [{ label: "20mg", total: 20, unit: "mg", vol: 3 }],
+    summary:
+      "A clinically developed anxiolytic nootropic with 30+ years of use. Reduces anxiety without sedation or dependence, increases BDNF, and enhances cognitive performance.",
+    desc: "Selank is a synthetic stabilised heptapeptide analogue of tuftsin, approved in Russia for generalised anxiety. Comparable in anxiolytic efficacy to benzodiazepines but without sedation, blunting, or dependence.",
+    mechanism:
+      "Increases BDNF in hippocampus and prefrontal cortex; enhances serotonin transporter activity; modulates dopamine synthesis; inhibits enkephalin degradation; reduces stress cytokines.",
+    benefits: [
+      "Potent anxiolytic — reduces anxiety and fear responses",
+      "No sedation, cognitive blunting, or dependence potential",
+      "Increases BDNF — supports neurogenesis and memory",
+      "Enhances mood and emotional resilience",
+      "Improves focus and cognitive performance under stress",
+      "Reduces pro-inflammatory cytokines from chronic stress",
+      "Immunostimulatory via tuftsin-like mechanism",
+      "Effective for generalised anxiety, stress, and burnout",
+    ],
+    spaBenefits: [
+      "Anxiety and stress reduction",
+      "Cognitive performance enhancement",
+      "Mood and emotional wellness",
+      "Burnout recovery and resilience",
+    ],
+    side: [
+      "One of the most well-tolerated peptides in clinical use",
+      "Mild injection site redness — transient",
+      "No dependence potential or withdrawal",
+      "No next-day cognitive impairment",
+    ],
+    dosing: "Common: 250–500mcg subcutaneously 5 days on / 2 days off.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+
+  {
+    id: "semax",
+    name: "Semax",
+    full: "Synthetic ACTH 4-7 Analogue Nootropic",
+    cat: "Cognitive & Wellness",
+    cap: "#A83858",
+    variants: [{ label: "20mg", total: 20, unit: "mg", vol: 3 }],
+    summary:
+      "A clinically approved nootropic derived from ACTH 4-7. Increases BDNF and NGF, enhances dopamine and serotonin, and provides neuroprotection.",
+    desc: "Semax is a synthetic heptapeptide nootropic with potent neuroprotective and cognitive-enhancing properties. Approved in Russia and Ukraine for stroke recovery, cognitive decline, and ADHD.",
+    mechanism:
+      "Stimulates BDNF and NGF synthesis; increases dopamine D1/D2 receptor density; enhances serotonin synthesis; antioxidant in neuronal tissue; reduces neuroinflammation; improves cerebral blood flow.",
+    benefits: [
+      "Significantly increases BDNF and NGF",
+      "Enhances learning speed and memory consolidation",
+      "Improves focus, attention, and executive function",
+      "Elevates mood and motivation",
+      "Neuroprotective against ischaemia and oxidative stress",
+      "Reduces neuroinflammation — beneficial for post-viral cognitive symptoms",
+      "Clinically approved for stroke recovery and rehabilitation",
+      "Improves cerebral blood flow and oxygen utilisation",
+    ],
+    spaBenefits: [
+      "Cognitive performance and brain health",
+      "Mental clarity and focus",
+      "Mood elevation and emotional balance",
+      "Neurological wellness and anti-aging",
+    ],
+    side: [
+      "Very well tolerated — 30+ years clinical use",
+      "Mild injection site redness — transient",
+      "Occasional brief headache on first use — self-resolving",
+      "No sedative or addictive potential",
+    ],
+    dosing:
+      "Common: 200–500mcg subcutaneously 5 days on / 2 days off. Morning dosing recommended.",
+    recommendedDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    freq: "5 days on / 2 days off",
+  },
+];
+
+const ALL_PENS = COMPOUNDS.flatMap((c) =>
+  c.variants.map((v) => ({
+    penId: `${c.id}__${v.label}`,
+    name: c.variants.length > 1 ? `${c.name} — ${v.label}` : c.name,
+    compoundId: c.id,
+    total: v.total,
+    unit: v.unit,
+    cap: c.cap,
+    vol: v.vol || 3,
+  }))
+);
+
+const TABS = [
+  "Aminos",
+  "Research",
+  "Calculator",
+  "How To Inject",
+  "Storage",
+  "My Protocol",
+];
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const INJECT_STEPS = [
+  {
+    n: "01",
+    title: "Remove the pen cover",
+    body: "Firmly grasp the pen body and pull the pen cover straight off. Set aside — you will replace it after use. Locate the needle end opposite the coloured dosing cap.",
+  },
+  {
+    n: "02",
+    title: "Remove the outer needle cover",
+    body: "The needle assembly has two protective layers. Twist off or pull the outer needle cover first. Dispose of the outer cover safely.",
+  },
+  {
+    n: "03",
+    title: "Remove the inner needle tip cover",
+    body: "Carefully remove the inner needle tip cover, fully exposing the needle tip. The needle is very fine — do not touch the needle tip at any point.",
+  },
+  {
+    n: "04",
+    title: "Point the needle tip upward",
+    body: "Hold the pen vertically with the needle tip pointing directly upward. This allows any trapped air bubbles to rise to the top of the barrel so they can be expelled before injection.",
+  },
+  {
+    n: "05",
+    title: "Prime the pen",
+    body: "With the needle pointing upward, set your dose dial to 2–3 clicks. Slowly press the injection button to push air through the needle. Repeat 2–3 times until a small clear droplet of fluid appears at the needle tip. The pen is now primed and air-free.",
+  },
+  {
+    n: "06",
+    title: "Set your dose",
+    body: "Refer to your dosage recommendation. Adjust the click dial to reflect your exact prescribed dose. Each click delivers precisely 0.01 mL of solution.",
+  },
+  {
+    n: "07",
+    title: "Prepare the injection site",
+    body: "Recommended site: soft fatty tissue around the abdomen — 2–3 cm to the left or right of the navel, slightly below. Clean with an alcohol swab and allow to fully air dry. Rotate sites with each administration.",
+  },
+  {
+    n: "08",
+    title: "Pinch the skin",
+    body: "Using your non-dominant hand, gently pinch a fold of skin at your chosen site. This lifts the subcutaneous fat layer away from the muscle, ensuring comfortable subcutaneous delivery.",
+  },
+  {
+    n: "09",
+    title: "Insert needle at 45 degrees",
+    body: "With the needle tip angled at 45 degrees to the skin surface, insert the needle smoothly and confidently into the pinched skin fold in one steady motion.",
+  },
+  {
+    n: "10",
+    title: "Inject slowly",
+    body: "Maintaining the angle and skin pinch, slowly and steadily press the injection end of the pen fully. Take 5–10 seconds — never rush this step.",
+  },
+  {
+    n: "11",
+    title: "Remove the needle",
+    body: "Keeping light pressure on the injection end, slowly withdraw the needle at the same 45-degree angle. Release the skin pinch after the needle is fully removed. Apply a dry cotton ball if needed — do not rub.",
+  },
+  {
+    n: "12",
+    title: "Replace covers and dispose safely",
+    body: "Carefully recap the needle with the inner cover, then unscrew the entire needle assembly. Dispose in a sharps container — never household waste. Needles must never be reused.",
+  },
+  {
+    n: "13",
+    title: "Replace pen cover and refrigerate",
+    body: "Replace the pen cover securely and return to the refrigerator (2–8°C) immediately. Label with the date first opened if not already marked.",
+  },
+];
+
+export default function App() {
+  const [tab, setTab] = useState(0);
+  const [expandedId, setExpandedId] = useState(null);
+  const [calcIdx, setCalcIdx] = useState(0);
+  const [calcDose, setCalcDose] = useState(+(ALL_PENS[0].total / 4).toFixed(4));
+  const [noticeOpen, setNoticeOpen] = useState(true);
+  const [regimen, setRegimen] = useState([]);
+  const [selPenId, setSelPenId] = useState(ALL_PENS[0].penId);
+  const [selDose, setSelDose] = useState(+(ALL_PENS[0].total / 4).toFixed(4));
+  const [selDays, setSelDays] = useState(COMPOUNDS[0].recommendedDays);
+
+  const cp = ALL_PENS[calcIdx];
+  const cpTotalClicks = cp.vol * 100;
+  const mgPerClick = cp.total / cpTotalClicks;
+  const clicksNeeded = Math.max(1, Math.round(calcDose / mgPerClick));
+  const mlNeeded = (clicksNeeded * 0.01).toFixed(2);
+
+  const selPen = ALL_PENS.find((p) => p.penId === selPenId) || ALL_PENS[0];
+  const selCompound =
+    COMPOUNDS.find((c) => c.id === selPen.compoundId) || COMPOUNDS[0];
+  const catColors = (cc) =>
+    CAT_COLORS[cc] || CAT_COLORS["Metabolic & Weight Management"];
+
+  const toggleDay = (d) =>
+    setSelDays((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+    );
+  const removeEntry = (id) => setRegimen((r) => r.filter((e) => e.id !== id));
+
+  const addEntry = () => {
+    if (!selDays.length) return;
+    setRegimen((r) => [
+      ...r,
+      {
+        id: Date.now(),
+        penId: selPenId,
+        name: selPen.name,
+        dose: selDose,
+        unit: selPen.unit,
+        days: [...selDays],
+        cap: selPen.cap,
+        cat: selCompound.cat,
+      },
+    ]);
+    setSelDays([]);
+  };
+
+  const downloadCSV = () => {
+    const unique = [...new Set(regimen.map((r) => r.name))];
+    const hdr = ["Day", ...unique];
+    const rows = DAYS.map((day) => {
+      const r = [day];
+      unique.forEach((n) => {
+        const e = regimen.find((x) => x.name === n && x.days.includes(day));
+        r.push(e ? `${e.dose}${e.unit}` : "");
+      });
+      return r;
+    });
+    const csv = [hdr, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "amino_protocol.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const sectionHeader = (tag, title, sub) => (
+    <div style={{ textAlign: "center", marginBottom: 44 }}>
+      <div
+        style={{
+          display: "inline-block",
+          background: C.blueLight,
+          color: C.blue,
+          fontSize: 10,
+          letterSpacing: "0.22em",
+          padding: "4px 16px",
+          borderRadius: 20,
+          marginBottom: 14,
+          fontWeight: 500,
+        }}
+      >
+        {tag}
+      </div>
+      <h1
+        style={{
+          fontFamily: "Georgia,serif",
+          fontWeight: 400,
+          fontSize: 30,
+          margin: "0 0 12px",
+          color: C.navy,
+        }}
+      >
+        {title}
+      </h1>
+      {sub && (
+        <p
+          style={{
+            color: C.muted,
+            fontSize: 14,
+            lineHeight: 1.8,
+            maxWidth: 580,
+            margin: "0 auto",
+          }}
+        >
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+
+  const catBadge = (cat) => {
+    const cc = catColors(cat);
+    return (
+      <span
+        style={{
+          background: cc.pill,
+          color: cc.text,
+          fontSize: 9,
+          fontWeight: 600,
+          padding: "3px 10px",
+          borderRadius: 20,
+          letterSpacing: "0.1em",
+        }}
+      >
+        {cc.tag}
+      </span>
+    );
+  };
+
+  const NoticeBanner = () =>
+    noticeOpen ? (
+      <div
+        style={{
+          background: C.blueLight,
+          borderBottom: `1px solid ${C.blue}33`,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "0 auto",
+            padding: "10px 32px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <div
+            style={{
+              flexShrink: 0,
+              marginTop: 1,
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              background: C.blue,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span
+              style={{
+                color: C.white,
+                fontSize: 11,
+                fontWeight: 700,
+                lineHeight: 1,
+              }}
+            >
+              i
+            </span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: C.navy,
+                letterSpacing: "0.06em",
+                marginBottom: 4,
+              }}
+            >
+              EDUCATIONAL USE NOTICE
+            </div>
+            <p
+              style={{
+                fontSize: 11,
+                color: C.navy,
+                lineHeight: 1.7,
+                margin: 0,
+                opacity: 0.85,
+              }}
+            >
+              This platform is intended strictly for educational and
+              informational purposes and is designed to provide general insight
+              into peptide science, mechanisms, and emerging research. The
+              content is informed by publicly available studies and
+              translational research sourced from globally recognized
+              institutions including <strong>Mayo Clinic</strong>,{" "}
+              <strong>University of Zagreb School of Medicine</strong>,{" "}
+              <strong>Salk Institute for Biological Studies</strong>,{" "}
+              <strong>German Sport University Cologne</strong>, and{" "}
+              <strong>
+                University of Queensland Institute for Molecular Bioscience
+              </strong>
+              .
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: C.navy,
+                lineHeight: 1.7,
+                margin: "6px 0 0",
+                opacity: 0.85,
+              }}
+            >
+              All content is provided for educational use only and should not be
+              interpreted as medical advice, diagnosis, or treatment guidance.
+              Users are strongly encouraged to consult with a qualified,
+              licensed medical provider for any personal health decisions. By
+              engaging with this platform, you acknowledge that this content is
+              not a substitute for professional medical care.
+            </p>
+          </div>
+          <button
+            onClick={() => setNoticeOpen(false)}
+            style={{
+              flexShrink: 0,
+              background: "none",
+              border: `1px solid ${C.blue}44`,
+              borderRadius: 6,
+              padding: "3px 10px",
+              fontSize: 11,
+              color: C.blue,
+              cursor: "pointer",
+              fontWeight: 500,
+              marginTop: 1,
+            }}
+          >
+            Dismiss ×
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div
+        style={{
+          background: C.blueLight,
+          borderBottom: `1px solid ${C.blue}22`,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1400,
+            margin: "0 auto",
+            padding: "6px 32px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: C.blue,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ color: C.white, fontSize: 9, fontWeight: 700 }}>
+              i
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: C.navy, opacity: 0.7 }}>
+            Educational use only — not medical advice.
+          </span>
+          <button
+            onClick={() => setNoticeOpen(true)}
+            style={{
+              background: "none",
+              border: "none",
+              color: C.blue,
+              fontSize: 11,
+              cursor: "pointer",
+              fontWeight: 500,
+              padding: 0,
+            }}
+          >
+            View full notice
+          </button>
+        </div>
+      </div>
+    );
+
+  const renderAminos = () => {
+    const byCategory = CAT_ORDER.map((cat) => ({
+      cat,
+      items: COMPOUNDS.filter((c) => c.cat === cat),
+    }));
+    return (
+      <div style={{ padding: "50px 40px", maxWidth: 1300, margin: "0 auto" }}>
+        {sectionHeader(
+          "COLLECTION",
+          "Amino Acid Auto-Injector Pens",
+          "All pens are a one-month supply. GLP starter pens use 1 mL reconstitution (100 clicks). Higher-dose GLP pens use 2 mL (200 clicks). All other pens are 3 mL (300 clicks). Each click = 0.01 mL."
+        )}
+        {byCategory
+          .filter((g) => g.items.length)
+          .map(({ cat, items }) => {
+            const cc = catColors(cat);
+            return (
+              <div key={cat} style={{ marginBottom: 52 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 4,
+                      height: 28,
+                      background: cc.border,
+                      borderRadius: 2,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: cc.text,
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    {cat.toUpperCase()}
+                  </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: "1px",
+                      background: cc.border + "33",
+                    }}
+                  />
+                  <span
+                    style={{
+                      background: cc.bg,
+                      color: cc.text,
+                      fontSize: 10,
+                      padding: "3px 12px",
+                      borderRadius: 20,
+                      border: `1px solid ${cc.border}44`,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {items.length} formula{items.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
+                    gap: 18,
+                  }}
+                >
+                  {items.map((a) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        background: C.white,
+                        borderRadius: 14,
+                        overflow: "hidden",
+                        border: `1px solid ${cc.border}28`,
+                        boxShadow: "0 2px 12px rgba(27,58,92,0.06)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: cc.bg,
+                          padding: "22px 22px 14px",
+                          borderBottom: `1px solid ${cc.border}20`,
+                        }}
+                      >
+                        <div style={{ marginBottom: 10 }}>{catBadge(cat)}</div>
+                        <div style={{ margin: "12px 0 10px" }}>
+                          <PenSVG cap={a.cap} w={210} />
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: cc.text,
+                            marginBottom: 2,
+                          }}
+                        >
+                          {a.name}
+                        </div>
+                        <div
+                          style={{ fontSize: 11, color: cc.text, opacity: 0.7 }}
+                        >
+                          {a.full}
+                        </div>
+                      </div>
+                      <div style={{ padding: "14px 18px 16px" }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.muted,
+                            lineHeight: 1.7,
+                            marginBottom: 12,
+                          }}
+                        >
+                          {a.summary}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 5,
+                            marginBottom: 10,
+                          }}
+                        >
+                          {a.variants.map((v) => (
+                            <span
+                              key={v.label}
+                              style={{
+                                background: cc.bg,
+                                color: cc.text,
+                                fontSize: 10,
+                                padding: "3px 9px",
+                                borderRadius: 12,
+                                border: `1px solid ${cc.border}44`,
+                              }}
+                            >
+                              {v.label}
+                              {v.vol === 1 ? " ★" : ""}
+                            </span>
+                          ))}
+                        </div>
+                        {a.variants.some((v) => v.vol === 1) && (
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: C.blue,
+                              marginBottom: 8,
+                            }}
+                          >
+                            ★ Starter pen — 1 mL / 100 clicks
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: 11,
+                            color: C.muted,
+                            borderTop: `1px solid ${C.gray100}`,
+                            paddingTop: 10,
+                          }}
+                        >
+                          <span style={{ color: C.gray600 }}>
+                            <strong>{a.variants.length}</strong> pen
+                            {a.variants.length > 1 ? "s" : ""} available
+                          </span>
+                          <span style={{ color: cc.border, fontWeight: 500 }}>
+                            {a.freq}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+    );
+  };
+
+  const renderResearch = () => (
+    <div style={{ padding: "50px 40px", maxWidth: 960, margin: "0 auto" }}>
+      {sectionHeader(
+        "CLINICAL EDUCATION",
+        "Research & Benefits",
+        "Evidence-informed overviews of each compound — mechanisms, therapeutic benefits, and clinical applications. Click any entry to expand."
+      )}
+      {CAT_ORDER.map((cat) => {
+        const items = COMPOUNDS.filter((c) => c.cat === cat);
+        if (!items.length) return null;
+        const cc = catColors(cat);
+        return (
+          <div key={cat} style={{ marginBottom: 36 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  width: 3,
+                  height: 22,
+                  background: cc.border,
+                  borderRadius: 2,
+                }}
+              />
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: cc.text,
+                  letterSpacing: "0.12em",
+                }}
+              >
+                {cat.toUpperCase()}
+              </div>
+              <div
+                style={{ flex: 1, height: "1px", background: cc.border + "33" }}
+              />
+            </div>
+            {items.map((a) => {
+              const open = expandedId === a.id;
+              return (
+                <div
+                  key={a.id}
+                  style={{
+                    background: C.white,
+                    borderRadius: 12,
+                    border: `1px solid ${cc.border}22`,
+                    marginBottom: 8,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    onClick={() => setExpandedId(open ? null : a.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 18px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        background: cc.dot,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{ fontSize: 15, fontWeight: 500, color: C.navy }}
+                      >
+                        {a.name}{" "}
+                        <span
+                          style={{
+                            color: C.muted,
+                            fontStyle: "italic",
+                            fontSize: 12,
+                          }}
+                        >
+                          — {a.full}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: cc.text,
+                          letterSpacing: "0.1em",
+                          marginTop: 2,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {cat.toUpperCase()}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                      {a.variants.map((v) => (
+                        <span
+                          key={v.label}
+                          style={{
+                            background: cc.bg,
+                            color: cc.text,
+                            fontSize: 10,
+                            padding: "2px 8px",
+                            borderRadius: 10,
+                          }}
+                        >
+                          {v.label}
+                        </span>
+                      ))}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        color: C.gray400,
+                        transition: "transform .2s",
+                        transform: open ? "rotate(180deg)" : "none",
+                        flexShrink: 0,
+                      }}
+                    >
+                      ⌄
+                    </div>
+                  </div>
+                  {open && (
+                    <div
+                      style={{
+                        borderTop: `1px solid ${cc.border}18`,
+                        padding: "20px 24px",
+                        background: "#FAFBFD",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 1.85,
+                          color: C.text,
+                          marginBottom: 18,
+                        }}
+                      >
+                        {a.desc}
+                      </p>
+                      <div
+                        style={{
+                          background: C.gray50,
+                          borderRadius: 10,
+                          border: `1px solid ${C.gray100}`,
+                          padding: "12px 16px",
+                          marginBottom: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 10,
+                            letterSpacing: "0.15em",
+                            color: C.muted,
+                            marginBottom: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          MECHANISM OF ACTION
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.text,
+                            lineHeight: 1.75,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          {a.mechanism}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 20,
+                          marginBottom: 16,
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              letterSpacing: "0.15em",
+                              color: C.blue,
+                              marginBottom: 10,
+                              fontWeight: 600,
+                            }}
+                          >
+                            THERAPEUTIC BENEFITS
+                          </div>
+                          {a.benefits.map((b) => (
+                            <div
+                              key={b}
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                marginBottom: 8,
+                                fontSize: 13,
+                                color: C.text,
+                                lineHeight: 1.6,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: cc.dot,
+                                  flexShrink: 0,
+                                  marginTop: 2,
+                                }}
+                              >
+                                ◆
+                              </span>
+                              {b}
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              letterSpacing: "0.15em",
+                              color: C.navy,
+                              marginBottom: 10,
+                              fontWeight: 600,
+                            }}
+                          >
+                            CLINICAL APPLICATIONS
+                          </div>
+                          {a.spaBenefits.map((b) => (
+                            <div
+                              key={b}
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                marginBottom: 8,
+                                fontSize: 13,
+                                color: C.text,
+                                lineHeight: 1.6,
+                              }}
+                            >
+                              <span style={{ color: C.blueMid, flexShrink: 0 }}>
+                                ◇
+                              </span>
+                              {b}
+                            </div>
+                          ))}
+                          <div style={{ marginTop: 16 }}>
+                            <div
+                              style={{
+                                fontSize: 10,
+                                letterSpacing: "0.15em",
+                                color: C.muted,
+                                marginBottom: 8,
+                                fontWeight: 600,
+                              }}
+                            >
+                              GENERAL TOLERABILITY
+                            </div>
+                            {a.side.map((s) => (
+                              <div
+                                key={s}
+                                style={{
+                                  display: "flex",
+                                  gap: 8,
+                                  marginBottom: 6,
+                                  fontSize: 12,
+                                  color: C.muted,
+                                  lineHeight: 1.6,
+                                }}
+                              >
+                                <span style={{ flexShrink: 0 }}>·</span>
+                                {s}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          background: C.blueLight,
+                          borderRadius: 10,
+                          border: `1px solid ${C.blue}22`,
+                          padding: "12px 16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 10,
+                            letterSpacing: "0.15em",
+                            color: C.blue,
+                            marginBottom: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          DOSING PROTOCOL
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: C.navy,
+                            lineHeight: 1.75,
+                          }}
+                        >
+                          {a.dosing}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderCalculator = () => (
+    <div style={{ padding: "50px 40px", maxWidth: 1000, margin: "0 auto" }}>
+      {sectionHeader(
+        "DOSING REFERENCE",
+        "Amino Dose Calculator",
+        "All pens are a one-month supply. Rec. Wk. Dose = Pen Strength ÷ 4. Click count per week varies by pen volume — see formulation tiers below."
+      )}
+
+      {/* Formulation Tier Callout */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 12,
+          marginBottom: 32,
+        }}
+      >
+        {[
+          {
+            tier: "Tier 1 — GLP Starter Pens",
+            vol: "1 mL reconstitution",
+            clicks: "100 total clicks",
+            wkClicks: "25 clicks / week",
+            examples: "Sema 1mg · Tirz 10mg · Reta 8mg",
+            bg: "#FFF8E8",
+            border: "#C47A20",
+            col: "#7A4A0A",
+          },
+          {
+            tier: "Tier 2 — GLP Higher-Dose Pens",
+            vol: "2 mL reconstitution",
+            clicks: "200 total clicks",
+            wkClicks: "50 clicks / week",
+            examples: "Sema 3.5–10mg · Tirz 20–60mg · Reta 16–48mg",
+            bg: "#E0F4FA",
+            border: "#0B9AC4",
+            col: "#065E7A",
+          },
+          {
+            tier: "Tier 3 — All Other Pens",
+            vol: "3 mL solution",
+            clicks: "300 total clicks",
+            wkClicks: "75 clicks / week",
+            examples: "NAD+, BPC-157, TB-500, GHK-Cu, and all others",
+            bg: C.blueLight,
+            border: C.blue,
+            col: C.navy,
+          },
+        ].map((t) => (
+          <div
+            key={t.tier}
+            style={{
+              background: t.bg,
+              border: `1.5px solid ${t.border}44`,
+              borderRadius: 12,
+              padding: "14px 16px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: t.col,
+                letterSpacing: "0.1em",
+                marginBottom: 8,
+              }}
+            >
+              {t.tier.toUpperCase()}
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: t.col,
+                marginBottom: 2,
+              }}
+            >
+              {t.wkClicks}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: t.col,
+                opacity: 0.8,
+                marginBottom: 6,
+              }}
+            >
+              {t.vol} · {t.clicks}
+            </div>
+            <div
+              style={{
+                fontSize: 10,
+                color: t.col,
+                opacity: 0.65,
+                lineHeight: 1.5,
+              }}
+            >
+              {t.examples}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 22,
+          marginBottom: 32,
+        }}
+      >
+        <div
+          style={{
+            background: C.white,
+            borderRadius: 14,
+            border: `1px solid ${C.blue}22`,
+            padding: "24px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              color: C.blue,
+              marginBottom: 16,
+              fontWeight: 600,
+            }}
+          >
+            INTERACTIVE DOSE CALCULATOR
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label
+              style={{
+                fontSize: 11,
+                color: C.muted,
+                letterSpacing: "0.1em",
+                display: "block",
+                marginBottom: 6,
+                fontWeight: 500,
+              }}
+            >
+              SELECT PEN
+            </label>
+            <select
+              value={calcIdx}
+              onChange={(e) => {
+                const i = Number(e.target.value);
+                setCalcIdx(i);
+                setCalcDose(+(ALL_PENS[i].total / 4).toFixed(4));
+              }}
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                borderRadius: 8,
+                border: `1px solid ${C.gray200}`,
+                fontSize: 13,
+                color: C.text,
+                background: C.gray50,
+              }}
+            >
+              {ALL_PENS.map((p, i) => (
+                <option key={p.penId} value={i}>
+                  {p.name} ({p.total}
+                  {p.unit} / {p.vol}mL)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label
+              style={{
+                fontSize: 11,
+                color: C.muted,
+                letterSpacing: "0.1em",
+                display: "block",
+                marginBottom: 6,
+                fontWeight: 500,
+              }}
+            >
+              DESIRED DOSE ({cp.unit})
+            </label>
+            <input
+              type="number"
+              value={calcDose}
+              min={0.01}
+              max={cp.total}
+              onChange={(e) => setCalcDose(Number(e.target.value))}
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                borderRadius: 8,
+                border: `1px solid ${C.gray200}`,
+                fontSize: 13,
+                color: C.text,
+                background: C.gray50,
+                boxSizing: "border-box",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 10,
+                color: C.muted,
+                marginTop: 4,
+              }}
+            >
+              <span>
+                Rec. Wk. Dose: {(cp.total / 4).toFixed(4)} {cp.unit} ·{" "}
+                {cpTotalClicks / 4} clicks
+              </span>
+              <span>
+                {cp.vol}mL pen · {cpTotalClicks} total clicks
+              </span>
+            </div>
+          </div>
+          <div
+            style={{ background: C.navy, borderRadius: 10, padding: "18px" }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 10,
+                textAlign: "center",
+              }}
+            >
+              {[
+                [String(clicksNeeded), "Clicks"],
+                [mlNeeded + " mL", "Volume"],
+                [
+                  (mgPerClick < 1
+                    ? mgPerClick.toFixed(4)
+                    : mgPerClick.toFixed(2)) +
+                    " " +
+                    cp.unit,
+                  "Per Click",
+                ],
+              ].map(([v, l]) => (
+                <div key={l}>
+                  <div
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 500,
+                      color: C.white,
+                      fontFamily: "Georgia,serif",
+                    }}
+                  >
+                    {v}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: C.gray200,
+                      letterSpacing: "0.1em",
+                      marginTop: 3,
+                    }}
+                  >
+                    {l.toUpperCase()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div
+          style={{
+            background: C.white,
+            borderRadius: 14,
+            border: `1px solid ${C.gray200}`,
+            padding: "24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              color: C.navy,
+              marginBottom: 4,
+              fontWeight: 600,
+            }}
+          >
+            SELECTED PEN SPECIFICATIONS
+          </div>
+          {[
+            ["Pen", cp.name],
+            ["Total Volume", `${cp.vol} mL`],
+            ["Total Clicks", String(cpTotalClicks)],
+            ["Volume per Click", "0.01 mL"],
+            [
+              "mg per Click",
+              (mgPerClick < 0.001
+                ? mgPerClick.toFixed(5)
+                : mgPerClick < 0.01
+                ? mgPerClick.toFixed(4)
+                : mgPerClick < 1
+                ? mgPerClick.toFixed(3)
+                : mgPerClick.toFixed(2)) +
+                " " +
+                cp.unit,
+            ],
+            ["Supply Duration", "1 Month"],
+            ["Rec. Wk. Dose", (cp.total / 4).toFixed(4) + " " + cp.unit],
+            ["Rec. Weekly Clicks", `${cpTotalClicks / 4} clicks`],
+          ].map(([k, v]) => (
+            <div
+              key={k}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "7px 12px",
+                background: C.gray50,
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+            >
+              <span style={{ color: C.muted }}>{k}</span>
+              <span style={{ fontWeight: 600, color: C.navy }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ marginTop: 6 }}>
+            <PenSVG cap={cp.cap} w={200} />
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: C.white,
+          borderRadius: 14,
+          border: `1px solid ${C.gray100}`,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "14px 20px",
+            background: C.navy,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              color: C.white,
+              fontWeight: 600,
+            }}
+          >
+            ALL PENS — WEEKLY DOSE REFERENCE ({ALL_PENS.length} pens)
+          </div>
+          <div style={{ fontSize: 9, color: C.gray200, fontStyle: "italic" }}>
+            Rec. Wk. Dose = Strength ÷ 4 · Clicks vary by pen volume tier
+          </div>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: C.bluePale }}>
+                {[
+                  "Compound",
+                  "Category",
+                  "Strength",
+                  "Formulation",
+                  "mg / click",
+                  "Rec. Wk. Dose",
+                  "Clicks / Wk",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "11px 14px",
+                      textAlign: "left",
+                      fontSize: 9,
+                      letterSpacing: "0.1em",
+                      color: C.navy,
+                      fontWeight: 700,
+                      borderBottom: `2px solid ${C.blue}33`,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {h.toUpperCase()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_PENS.map((p, idx) => {
+                const cmp = COMPOUNDS.find((c) => c.id === p.compoundId);
+                const cc = catColors(cmp.cat);
+                const totalClicks = p.vol * 100;
+                const mpc = p.total / totalClicks;
+                const wkDose = p.total / 4;
+                const wkClicks = totalClicks / 4;
+                const mpcStr =
+                  mpc < 0.0001
+                    ? mpc.toFixed(6)
+                    : mpc < 0.001
+                    ? mpc.toFixed(5)
+                    : mpc < 0.01
+                    ? mpc.toFixed(4)
+                    : mpc < 1
+                    ? mpc.toFixed(3)
+                    : mpc.toFixed(2);
+                const wkStr =
+                  wkDose < 0.001
+                    ? wkDose.toFixed(5)
+                    : wkDose < 0.01
+                    ? wkDose.toFixed(4)
+                    : wkDose < 1
+                    ? wkDose.toFixed(3)
+                    : wkDose.toFixed(2);
+                const tierColor =
+                  p.vol === 1 ? "#C47A20" : p.vol === 2 ? "#0B9AC4" : C.blue;
+                const tierBg =
+                  p.vol === 1
+                    ? "#FFF8E8"
+                    : p.vol === 2
+                    ? "#E0F4FA"
+                    : C.blueLight;
+                const tierLabel =
+                  p.vol === 1 ? "1mL · Starter" : p.vol === 2 ? "2mL" : "3mL";
+                return (
+                  <tr
+                    key={p.penId}
+                    style={{
+                      borderBottom: `1px solid ${C.gray100}`,
+                      background: idx % 2 === 0 ? C.white : "#FAFBFD",
+                    }}
+                  >
+                    <td style={{ padding: "11px 14px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 7,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: p.cap,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span
+                          style={{
+                            color: C.navy,
+                            fontWeight: 600,
+                            fontSize: 12,
+                          }}
+                        >
+                          {cmp.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <span
+                        style={{
+                          background: cc.bg,
+                          color: cc.text,
+                          fontSize: 9,
+                          padding: "2px 8px",
+                          borderRadius: 10,
+                          fontWeight: 600,
+                          border: `1px solid ${cc.border}33`,
+                        }}
+                      >
+                        {cc.tag}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "11px 14px",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        color: C.navy,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {p.total} {p.unit}
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <span
+                        style={{
+                          background: tierBg,
+                          color: tierColor,
+                          fontSize: 10,
+                          padding: "3px 10px",
+                          borderRadius: 12,
+                          fontWeight: 700,
+                          border: `1px solid ${tierColor}44`,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {tierLabel}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "11px 14px",
+                        color: C.muted,
+                        fontSize: 11,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {mpcStr} {p.unit}
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <div
+                        style={{ fontSize: 15, fontWeight: 800, color: C.navy }}
+                      >
+                        {wkStr} {p.unit}
+                      </div>
+                      <div
+                        style={{ fontSize: 9, color: C.muted, marginTop: 1 }}
+                      >
+                        {cmp.freq}
+                      </div>
+                    </td>
+                    <td style={{ padding: "11px 14px" }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: tierColor,
+                          color: C.white,
+                          fontWeight: 700,
+                          padding: "5px 14px",
+                          borderRadius: 20,
+                          fontSize: 13,
+                          minWidth: 80,
+                        }}
+                      >
+                        {wkClicks} clicks
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div
+          style={{
+            padding: "12px 16px",
+            background: C.bluePale,
+            borderTop: `1px solid ${C.blue}22`,
+            fontSize: 11,
+            color: C.navy,
+            textAlign: "center",
+          }}
+        >
+          <strong>Formulation tiers explained:</strong> GLP starter pens use 1
+          mL (100 clicks · 25 clicks/wk) · Higher-dose GLP pens use 2 mL (200
+          clicks · 50 clicks/wk) · All other pens use 3 mL (300 clicks · 75
+          clicks/wk) · Rec. Wk. Dose = Strength ÷ 4 for all pens.
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderInject = () => (
+    <div style={{ padding: "50px 40px", maxWidth: 820, margin: "0 auto" }}>
+      {sectionHeader(
+        "ADMINISTRATION GUIDE",
+        "How To Self-Inject",
+        "A complete step-by-step guide to safe, comfortable subcutaneous auto-injector administration. Read all steps before your first injection."
+      )}
+      <div
+        style={{
+          background: C.blueLight,
+          border: `1px solid ${C.blue}33`,
+          borderRadius: 10,
+          padding: "14px 18px",
+          marginBottom: 28,
+          display: "flex",
+          gap: 10,
+        }}
+      >
+        <span style={{ fontSize: 14, flexShrink: 0 }}>⚕</span>
+        <div style={{ fontSize: 13, color: C.navy, lineHeight: 1.7 }}>
+          For educational reference only. Always follow instructions provided by
+          your healthcare provider. For your first injection, consider having
+          administration supervised by a licensed clinician.
+        </div>
+      </div>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: 32,
+          padding: "24px",
+          background: C.gray50,
+          borderRadius: 12,
+          border: `1px solid ${C.gray100}`,
+        }}
+      >
+        <PenSVG cap={C.blue} w={320} />
+        <div
+          style={{
+            fontSize: 10,
+            color: C.muted,
+            marginTop: 10,
+            letterSpacing: "0.14em",
+            fontWeight: 500,
+          }}
+        >
+          SUBCUTANEOUS AUTO-INJECTOR PEN
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {INJECT_STEPS.map((s, i) => {
+          const isKey = [0, 1, 2, 11, 12].includes(i);
+          return (
+            <div
+              key={s.n}
+              style={{
+                display: "flex",
+                gap: 16,
+                background: C.white,
+                borderRadius: 12,
+                padding: "16px 20px",
+                border: `1px solid ${C.gray100}`,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: isKey ? C.navy : C.blueLight,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: isKey ? C.white : C.blue,
+                }}
+              >
+                {s.n}
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: C.navy,
+                    marginBottom: 4,
+                  }}
+                >
+                  {s.title}
+                </div>
+                <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.8 }}>
+                  {s.body}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div
+        style={{
+          background: C.gray50,
+          border: `1px solid ${C.gray200}`,
+          borderRadius: 12,
+          padding: "16px 20px",
+          marginTop: 20,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 10,
+            letterSpacing: "0.16em",
+            color: C.navy,
+            marginBottom: 8,
+            fontWeight: 600,
+          }}
+        >
+          INJECTION SITE ROTATION
+        </div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.8 }}>
+          Always rotate sites with each administration. Suggested zones: left of
+          navel, right of navel, lower left abdomen, lower right abdomen. Use a
+          4-site rotation pattern to prevent tissue accumulation, bruising, and
+          injection site reactions.
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStorage = () => (
+    <div style={{ padding: "50px 40px", maxWidth: 860, margin: "0 auto" }}>
+      {sectionHeader(
+        "HANDLING & PRESERVATION",
+        "Storage Guidelines",
+        "Correct storage maintains potency, sterility, and formulation integrity. Follow these guidelines precisely."
+      )}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 20,
+          marginBottom: 22,
+        }}
+      >
+        {[
+          {
+            icon: "❄️",
+            title: "Refrigerator — Recommended",
+            sub: "2–8°C / 36–46°F",
+            bg: C.blueLight,
+            border: C.blue,
+            col: C.navy,
+            pts: [
+              "Stable up to 6 months refrigerated — potentially longer with careful handling",
+              "Store in the back of the fridge, away from the door — temperature fluctuates at the door",
+              "Keep in original box or dark container to protect from light exposure",
+              "Avoid freezing — freezing degrades the solution and may damage the pen mechanism",
+              "Allow pen to reach room temperature 10–15 minutes before injecting for comfort",
+            ],
+          },
+          {
+            icon: "🌡️",
+            title: "Room Temperature — Short Term",
+            sub: "Up to ~25°C / 77°F",
+            bg: C.gray50,
+            border: C.gray200,
+            col: C.gray600,
+            pts: [
+              "Pens are stable at room temperature for days to a few weeks if kept from heat",
+              "Keep away from direct sunlight and heat sources at all times",
+              "Return to refrigerator if not using within the next couple of weeks",
+              "Use an insulated travel pouch if away more than 24 hours",
+              "Avoid leaving in a hot car or direct sun, even briefly",
+            ],
+          },
+        ].map(({ icon, title, sub, bg, border, col, pts }) => (
+          <div
+            key={title}
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${border}44`,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                background: bg,
+                padding: "16px 20px",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                borderBottom: `1px solid ${border}33`,
+              }}
+            >
+              <span style={{ fontSize: 24 }}>{icon}</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.navy }}>
+                  {title}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: col,
+                    marginTop: 2,
+                    fontWeight: 500,
+                  }}
+                >
+                  {sub}
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: "16px 20px" }}>
+              {pts.map((b) => (
+                <div
+                  key={b}
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginBottom: 9,
+                    fontSize: 13,
+                    color: C.text,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <span style={{ color: C.blue, flexShrink: 0, marginTop: 2 }}>
+                    ◆
+                  </span>
+                  {b}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          background: C.white,
+          borderRadius: 12,
+          border: `1px solid ${C.gray100}`,
+          padding: "20px 24px",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 10,
+            letterSpacing: "0.18em",
+            color: C.navy,
+            marginBottom: 14,
+            fontWeight: 600,
+          }}
+        >
+          QUICK REFERENCE
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 10,
+          }}
+        >
+          {[
+            [
+              "📦",
+              "Original Packaging",
+              "Store in original box to block light",
+            ],
+            ["📅", "Date Opened", "Label each pen with the opening date"],
+            ["🚫", "No Freezing", "Freezing damages the formulation"],
+            ["💡", "Away from Light", "UV degrades amino formulations"],
+            ["✈️", "Travel", "Insulated pouch, under 25°C"],
+            ["🔒", "Needle Safety", "Replace all covers immediately after use"],
+          ].map(([ic, l, t]) => (
+            <div
+              key={l}
+              style={{
+                background: C.gray50,
+                borderRadius: 8,
+                padding: "12px 14px",
+                border: `1px solid ${C.gray100}`,
+              }}
+            >
+              <div style={{ fontSize: 18, marginBottom: 5 }}>{ic}</div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: C.navy,
+                  marginBottom: 3,
+                }}
+              >
+                {l}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                {t}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderProtocol = () => {
+    const weekGrid = DAYS.map((day) => ({
+      day,
+      entries: regimen.filter((e) => e.days.includes(day)),
+    }));
+    return (
+      <div style={{ padding: "50px 40px", maxWidth: 980, margin: "0 auto" }}>
+        {sectionHeader(
+          "PERSONALISED REGIMEN",
+          "My Protocol Builder",
+          "Build your weekly amino therapy schedule. Select each peptide, choose administration days, and download your complete protocol as a CSV."
+        )}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 24,
+            marginBottom: 26,
+          }}
+        >
+          <div
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${C.blue}22`,
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: "0.18em",
+                color: C.blue,
+                marginBottom: 16,
+                fontWeight: 600,
+              }}
+            >
+              ADD A PEPTIDE
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label
+                style={{
+                  fontSize: 10,
+                  color: C.muted,
+                  letterSpacing: "0.1em",
+                  display: "block",
+                  marginBottom: 6,
+                  fontWeight: 500,
+                }}
+              >
+                SELECT PEN
+              </label>
+              <select
+                value={selPenId}
+                onChange={(e) => {
+                  setSelPenId(e.target.value);
+                  const pen = ALL_PENS.find((p) => p.penId === e.target.value);
+                  const cmp = COMPOUNDS.find((c) => c.id === pen.compoundId);
+                  setSelDose(+(pen.total / 4).toFixed(4));
+                  setSelDays(cmp.recommendedDays);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.gray200}`,
+                  fontSize: 13,
+                  color: C.text,
+                  background: C.gray50,
+                }}
+              >
+                {CAT_ORDER.map((cat) => (
+                  <optgroup key={cat} label={cat}>
+                    {ALL_PENS.filter(
+                      (p) =>
+                        COMPOUNDS.find((c) => c.id === p.compoundId)?.cat ===
+                        cat
+                    ).map((p) => (
+                      <option key={p.penId} value={p.penId}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div
+              style={{
+                padding: "8px 12px",
+                background: catColors(selCompound.cat).bg,
+                borderRadius: 8,
+                marginBottom: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: selPen.cap,
+                }}
+              />
+              <span
+                style={{ fontSize: 11, color: catColors(selCompound.cat).text }}
+              >
+                {selCompound.freq} · {selPen.vol}mL pen · {selPen.vol * 100}{" "}
+                total clicks
+              </span>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  fontSize: 10,
+                  color: C.muted,
+                  letterSpacing: "0.1em",
+                  display: "block",
+                  marginBottom: 6,
+                  fontWeight: 500,
+                }}
+              >
+                DOSE ({selPen.unit})
+              </label>
+              <input
+                type="number"
+                value={selDose}
+                min={0.01}
+                max={selPen.total}
+                onChange={(e) => setSelDose(Number(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.gray200}`,
+                  fontSize: 13,
+                  color: C.text,
+                  background: C.gray50,
+                  boxSizing: "border-box",
+                }}
+              />
+              <div style={{ fontSize: 10, color: C.muted, marginTop: 3 }}>
+                Rec. Wk. Dose: {(selPen.total / 4).toFixed(4)}
+                {selPen.unit} · {(selPen.vol * 100) / 4} clicks
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  fontSize: 10,
+                  color: C.muted,
+                  letterSpacing: "0.1em",
+                  display: "block",
+                  marginBottom: 8,
+                  fontWeight: 500,
+                }}
+              >
+                ADMINISTRATION DAYS
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {DAYS.map((d) => {
+                  const on = selDays.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => toggleDay(d)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        cursor: "pointer",
+                        background: on ? C.blue : C.gray50,
+                        color: on ? C.white : C.muted,
+                        border: `1px solid ${on ? C.blue : C.gray200}`,
+                        fontWeight: on ? 600 : 400,
+                        transition: "all .12s",
+                      }}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <button
+              onClick={addEntry}
+              disabled={!selDays.length}
+              style={{
+                width: "100%",
+                background: selDays.length ? C.navy : C.gray200,
+                color: C.white,
+                border: "none",
+                borderRadius: 8,
+                padding: "11px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: selDays.length ? "pointer" : "default",
+                letterSpacing: "0.06em",
+                transition: "background .15s",
+              }}
+            >
+              + Add to Protocol
+            </button>
+          </div>
+          <div
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${C.gray200}`,
+              padding: "22px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.18em",
+                  color: C.navy,
+                  fontWeight: 600,
+                }}
+              >
+                CURRENT REGIMEN
+              </div>
+              {regimen.length > 0 && (
+                <button
+                  onClick={downloadCSV}
+                  style={{
+                    background: C.blueLight,
+                    color: C.blue,
+                    border: "none",
+                    borderRadius: 16,
+                    padding: "5px 14px",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  ↓ CSV
+                </button>
+              )}
+            </div>
+            {regimen.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px 0",
+                  color: C.muted,
+                  fontSize: 13,
+                }}
+              >
+                <div style={{ fontSize: 26, marginBottom: 8, opacity: 0.25 }}>
+                  ◈
+                </div>
+                No peptides added yet.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {regimen.map((e) => {
+                  const cc = catColors(e.cat);
+                  return (
+                    <div
+                      key={e.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        background: cc.bg,
+                        borderRadius: 8,
+                        padding: "9px 13px",
+                        border: `1px solid ${cc.border}22`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: e.cap,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: cc.text,
+                          }}
+                        >
+                          {e.name} — {e.dose}
+                          {e.unit}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: cc.text,
+                            opacity: 0.7,
+                            marginTop: 1,
+                          }}
+                        >
+                          {e.days.join(" · ")}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeEntry(e.id)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: C.muted,
+                          cursor: "pointer",
+                          fontSize: 16,
+                          padding: "2px 5px",
+                          lineHeight: 1,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+        {regimen.length > 0 && (
+          <div
+            style={{
+              background: C.white,
+              borderRadius: 14,
+              border: `1px solid ${C.gray100}`,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 20px",
+                background: C.navy,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.18em",
+                  color: C.white,
+                  fontWeight: 600,
+                }}
+              >
+                WEEKLY SCHEDULE OVERVIEW
+              </div>
+              <button
+                onClick={downloadCSV}
+                style={{
+                  background: C.blue,
+                  color: C.white,
+                  border: "none",
+                  borderRadius: 16,
+                  padding: "6px 16px",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                ↓ Download CSV
+              </button>
+            </div>
+            <div style={{ overflowX: "auto", padding: "18px 20px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `80px repeat(${regimen.length},1fr)`,
+                  gap: 2,
+                  minWidth: 500,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    letterSpacing: "0.1em",
+                    padding: "6px 0",
+                    alignSelf: "end",
+                    fontWeight: 600,
+                  }}
+                >
+                  DAY
+                </div>
+                {regimen.map((e) => (
+                  <div
+                    key={e.id}
+                    style={{ textAlign: "center", padding: "4px" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: "50%",
+                          background: e.cap,
+                        }}
+                      />
+                      <div
+                        style={{ fontSize: 9, fontWeight: 600, color: C.navy }}
+                      >
+                        {e.name.split(" — ")[0]}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 8, color: C.muted }}>
+                      {e.dose}
+                      {e.unit}
+                    </div>
+                  </div>
+                ))}
+                {weekGrid.map(({ day, entries }) => [
+                  <div
+                    key={day}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: C.navy,
+                      padding: "8px 0",
+                      borderTop: `1px solid ${C.gray50}`,
+                    }}
+                  >
+                    {day}
+                  </div>,
+                  ...regimen.map((re) => {
+                    const has = entries.find((e) => e.id === re.id);
+                    const rePen = ALL_PENS.find((p) => p.penId === re.penId);
+                    const cl = rePen
+                      ? Math.max(
+                          1,
+                          Math.round(
+                            re.dose / (rePen.total / (rePen.vol * 100))
+                          )
+                        )
+                      : 1;
+                    const cc = catColors(re.cat);
+                    return (
+                      <div
+                        key={re.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderTop: `1px solid ${C.gray50}`,
+                          padding: "4px",
+                        }}
+                      >
+                        {has ? (
+                          <div
+                            style={{
+                              background: cc.border,
+                              borderRadius: 12,
+                              padding: "3px 9px",
+                              fontSize: 9,
+                              color: C.white,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {cl} clicks
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: 5,
+                              height: 5,
+                              borderRadius: "50%",
+                              background: C.gray100,
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  }),
+                ])}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        fontFamily: "system-ui,sans-serif",
+        background: C.gray50,
+        minHeight: "100vh",
+        color: C.text,
+      }}
+    >
+      <header
+        style={{
+          background: C.white,
+          borderBottom: `1px solid ${C.gray100}`,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          boxShadow: "0 1px 8px rgba(27,58,92,0.06)",
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            maxWidth: 1400,
+            margin: "0 auto",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                background: C.navy,
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: 18,
+                  height: 18,
+                  border: `2px solid ${C.white}`,
+                  borderRadius: "50%",
+                  position: "relative",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%,-50%)",
+                    width: 6,
+                    height: 6,
+                    background: C.blue,
+                    borderRadius: "50%",
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div
+                style={{
+                  fontSize: 13,
+                  letterSpacing: "0.1em",
+                  color: C.navy,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}
+              >
+                AUTO PEN RESEARCH GROUP
+              </div>
+              <div
+                style={{
+                  fontSize: 8,
+                  letterSpacing: "0.2em",
+                  color: C.muted,
+                  marginTop: 2,
+                }}
+              >
+                AMINO ACID THERAPY EDUCATION
+              </div>
+            </div>
+          </div>
+          <nav style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            {TABS.map((t, i) => (
+              <button
+                key={t}
+                onClick={() => setTab(i)}
+                style={{
+                  background: tab === i ? C.navy : "transparent",
+                  border:
+                    tab === i ? `1px solid ${C.navy}` : "1px solid transparent",
+                  borderRadius: 6,
+                  padding: "7px 14px",
+                  fontSize: 12,
+                  color: tab === i ? C.white : C.muted,
+                  cursor: "pointer",
+                  letterSpacing: "0.04em",
+                  fontWeight: tab === i ? 600 : 400,
+                  transition: "all .15s",
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </header>
+      <NoticeBanner />
+      {tab === 0 && renderAminos()}
+      {tab === 1 && renderResearch()}
+      {tab === 2 && renderCalculator()}
+      {tab === 3 && renderInject()}
+      {tab === 4 && renderStorage()}
+      {tab === 5 && renderProtocol()}
+      <footer
+        style={{
+          background: C.navy,
+          padding: "24px 40px",
+          textAlign: "center",
+          marginTop: 16,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            color: C.blueLight,
+            marginBottom: 6,
+            fontWeight: 600,
+          }}
+        >
+          AUTO PEN RESEARCH GROUP
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: C.gray400,
+            lineHeight: 1.7,
+            maxWidth: 600,
+            margin: "0 auto",
+          }}
+        >
+          This resource is provided for patient education and reference only.
+          All amino therapy must be prescribed and supervised by a licensed
+          healthcare provider. Do not self-diagnose or alter your prescribed
+          protocol without consulting your clinician.
+        </div>
+      </footer>
+    </div>
+  );
+}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
